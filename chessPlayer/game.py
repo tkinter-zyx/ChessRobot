@@ -126,24 +126,57 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
         point = 0
         for kernel in kernels.values():
             res = self._filter(self._filter(board, kernel), kernel)
-            print('res:')
-            self.show_board(res)
+            # print('res:')
+            # self.show_board(res)
             for i in range(len(res)):
                 for j in range(len(res[0])):
                     if res[i][j] >= 2:
-                        point += j * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2)
+                        try:
+                            point += j * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2)
+                        except:
+                            point += j * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2 + 1)
         return point
 
-    def ab_pruning(self, board):
+    def ab_pruning(self, board, depth, minimax):
+        import copy
+        if depth == 3:
+            return self.grade(board)
+        depth += 1
+        point = {}
         for i in range(len(board)):
             for j in range(len(board[i])):
                 if not board[i][j]:
-                    pass
+                    board_now = copy.deepcopy(board)
+                    board_now[i][j] = minimax
+                    point_key = self.ab_pruning(board_now, depth, -minimax)
+                    if point_key not in point:
+                        point[point_key] = (i, j)
+                    else:
+                        point[point_key + 0.23232] = (i, j)
+        if minimax == 1:
+            value = -1000000
+            for i in point.keys():
+                if i > value:
+                    value = i
+            coord = point[value]
+        else:
+            value = 100000000
+            for i in point.keys():
+                if i < value:
+                    value = i
+            coord = point[value]
+        if depth == 0:
+            return coord
+        else:
+            return value
 
-    def drop(self, coord, color):  # 传入用户落子坐标,调用算法返回电脑落子坐标
+    def drop(self, coord, color = -1):  # 传入用户落子坐标,调用算法返回电脑落子坐标
         if color != 1 and color != -1 and self.board[coord[0]][coord[1]] == 0:
             raise ValueError
         self.board[coord[0]][coord[1]] = color
+        coord = self.ab_pruning(self.board, 0, 1)
+        self.board[coord[0]][coord[1]] = -color
+        self.show_board()
 
     def show_board(self, board=1):
         j = 0
@@ -167,8 +200,8 @@ test.drop((5, 1), 1)
 test.drop((5, 2), 1)
 test.drop((5, 3), 1)
 # test.drop((5, 4), 1)
-test.show_board()
+# test.show_board()
 # test.drop((5, 5), 1)
-print(test.grade(test.board))
-test.show_board()
+# print(test.grade(test.board))
+# test.show_board()
 # print(test.if_win())
