@@ -9,6 +9,7 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
                 self.board[i].append(0)
         self._visited = []
         self.win = 0
+        self.offensive = 0.7 # 进攻系数,取值0~1
 
     def _search(self, coord, way, linknum):  # 传入本次搜索的中心与连接方式,0为横,1为竖,2为/,3为\,-1为首个中心棋子
         self._visited.append(coord)
@@ -132,23 +133,30 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
                 for j in range(len(res[0])):
                     if res[i][j] >= 2:
                         try:
-                            point += j * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2)
+                            point += (j ** 3 * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2)) / 10 * self.offensive
                         except:
-                            point += j * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2 + 1)
+                            point += (j ** 3 * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2 + 1)) / 10 * self.offensive
+                    if res[i][j] <= -2:
+                        try:
+                            point += (j ** 3 * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2)) / 10 * (1 - self.offensive)
+                        except:
+                            point += (j ** 3 * 100 + 5 / ((i - self.size[0] / 2) ** 2 + (j - self.size[0] / 2) ** 2 + 1)) / 10 * (1 - self.offensive)
+        self.show_board(board)
+        print(point)
         return point
 
     def ab_pruning(self, board, depth, minimax):
         import copy
-        if depth == 3:
+        if depth == 1:
             return self.grade(board)
-        depth += 1
+        # depth += 1
         point = {}
         for i in range(len(board)):
             for j in range(len(board[i])):
                 if not board[i][j]:
                     board_now = copy.deepcopy(board)
                     board_now[i][j] = minimax
-                    point_key = self.ab_pruning(board_now, depth, -minimax)
+                    point_key = self.ab_pruning(board_now, depth + 1, -minimax)
                     if point_key not in point:
                         point[point_key] = (i, j)
                     else:
@@ -196,12 +204,17 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
 
 test = Game()
 # test.show_board()
-test.drop((5, 1), 1)
-test.drop((5, 2), 1)
-test.drop((5, 3), 1)
+test.drop((5, 1))
+test.drop((5, 2))
+test.drop((5, 3))
+test.drop((5, 4))
+test.drop((5, 5))
 # test.drop((5, 4), 1)
 # test.show_board()
 # test.drop((5, 5), 1)
 # print(test.grade(test.board))
 # test.show_board()
 # print(test.if_win())
+'''
+问题:局面评估算法得出的结果表明离对手越远分值越高,可能不是正确的结果
+'''
