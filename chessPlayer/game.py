@@ -10,66 +10,29 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
         self._visited = []
         self.win = 0
         self.offensive = 0.7 # 进攻系数,取值0~1
+        self.search_depth = 3
+        self.search_direct = [(0, -1), (0, 1), (1, 0), (-1, 0), (1, -1), (-1, 1), (-1, -1), (1, 1)]
 
     def _search(self, coord, way, linknum):  # 传入本次搜索的中心与连接方式,0为横,1为竖,2为/,3为\,-1为首个中心棋子
         self._visited.append(coord)
         linknum += 1
         if linknum >= 5:
             self.win = 1
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0]][coord[1] - 1] and (way == 0 or way == -1) and (
-            coord[0], coord[1] - 1) not in self._visited:
-                self._search((coord[0], coord[1] - 1), 0, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0]][coord[1] + 1] and (way == 0 or way == -1) and (
-            coord[0], coord[1] + 1) not in self._visited:
-                self._search((coord[0], coord[1] - 1), 0, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] + 1][coord[1]] and (way == 1 or way == -1) and (
-                coord[0] + 1, coord[1]) not in self._visited:
-                self._search((coord[0] + 1, coord[1]), 1, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] - 1][coord[1]] and (way == 1 or way == -1) and (
-                coord[0] - 1, coord[1]) not in self._visited:
-                self._search((coord[0] - 1, coord[1]), 1, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] + 1][coord[1] - 1] and (
-                    way == 2 or way == -1) and (coord[0] + 1, coord[1] - 1) not in self._visited:
-                self._search((coord[0] + 1, coord[1] - 1), 2, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] - 1][coord[1] + 1] and (
-                    way == 2 or way == -1) and (coord[0] - 1, coord[1] + 1) not in self._visited:
-                self._search((coord[0] - 1, coord[1] + 1), 2, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] - 1][coord[1] - 1] and (
-                    way == 3 or way == -1) and (coord[0] - 1, coord[1] - 1) not in self._visited:
-                self._search((coord[0] - 1, coord[1] - 1), 3, linknum)
-        except IndexError:
-            pass
-        try:
-            if self.board[coord[0]][coord[1]] == self.board[coord[0] + 1][coord[1] + 1] and (
-                    way == 3 or way == -1) and (coord[0] + 1, coord[1] + 1) not in self._visited:
-                self._search((coord[0] + 1, coord[1] + 1), 3, linknum)
-        except IndexError:
-            pass
+        else:
+            for i in range(8):
+                try:
+                    if self.board[coord[0]][coord[1]] == self.board[coord[0] + self.search_direct[i][0]][coord[1] + self.search_direct[i][1]] \
+                            and (way == i // 2 or way == -1) \
+                            and (coord[0] + self.search_direct[i][0], coord[1] + self.search_direct[i][1]) not in self._visited:
+                        self._search((coord[0] + self.search_direct[i][0], coord[1] + self.search_direct[i][1]), i // 2, linknum)
+                except IndexError:
+                    pass
         return 0
 
     def if_win(self):  # 1为白子胜,-1为黑子胜,0为未结束
-        self._visited = []
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
+                self._visited = []
                 if self.board[i][j] == 1 and (i, j) not in self._visited:
                     self._search((i, j), -1, 0)
                     if self.win:
@@ -147,7 +110,7 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
 
     def ab_pruning(self, board, depth, minimax):
         import copy
-        if depth == 1:
+        if depth == self.search_depth:
             return self.grade(board)
         # depth += 1
         point = {}
@@ -204,11 +167,11 @@ class Game:  # 由于图像识别的限制,固定电脑方为白子后手,玩家
 
 test = Game()
 # test.show_board()
-test.drop((5, 1))
-test.drop((5, 2))
-test.drop((5, 3))
-test.drop((5, 4))
-test.drop((5, 5))
+# test.drop((5, 1))
+# test.drop((5, 2))
+# test.drop((5, 3))
+# test.drop((5, 4))
+# test.drop((5, 5))
 # test.drop((5, 4), 1)
 # test.show_board()
 # test.drop((5, 5), 1)
@@ -218,3 +181,10 @@ test.drop((5, 5))
 '''
 问题:局面评估算法得出的结果表明离对手越远分值越高,可能不是正确的结果
 '''
+test.board = [[0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 1, 1],
+            [0, 0, 1, 0, 1, 1],
+            [0, 1, 0, 1, 1, 0],
+            [0, -1, -1, -1, -1, -1]]
+print(test.if_win())
